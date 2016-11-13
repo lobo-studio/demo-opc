@@ -1,3 +1,5 @@
+require 'dotenv'
+Dotenv.load
 require 'sinatra'
 require 'httparty'
 require 'json'
@@ -5,7 +7,7 @@ require 'time'
 require 'date'
 require 'chartkick'
 
-URL_ROOT = "http://a4b0666a.ngrok.io/method=read&param=PVStations.Thailand.Surin"
+URL_ROOT = "http://#{ENV['NGROK'] }.ngrok.io/method=read&param=PVStations.Thailand.Surin"
 
 
 get '/' do
