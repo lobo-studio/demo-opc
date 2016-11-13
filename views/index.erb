@@ -31,7 +31,7 @@
     		 */
     		function requestData() {
     			$.ajax({
-    				url: 'http://localhost:4567/temperatures',
+    				url: '/temperatures',
     				success: function(points) {
 
     					shift_env_temp = chart.series[0].data.length > 20; // shift if the series is longer than 20
@@ -50,7 +50,7 @@
 
             function requestDataVoltage() {
     			$.ajax({
-    				url: 'http://localhost:4567/voltages',
+    				url: '/voltages',
     				success: function(points) {
 
     					// add the point
