@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Demo - Real time data</title>
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="font-awesome/css/font-awesome.css" rel="stylesheet">
+
+    <link href="css/animate.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <!-- Mainly scripts -->
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/plugins/metisMenu/jquery.metisMenu.js"></script>
+    <script src="js/plugins/slimscroll/jquery.slimscroll.min.js"></script>
+
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="js/chartkick.js"></script>
+
+    <script>
+    		var chart; // global
+            var chart_voltage;
+
+    		/**
+    		 * Request data from the server, add it to the graph and set a timeout to request again
+    		 */
+    		function requestData() {
+    			$.ajax({
+    				url: 'http://localhost:4567/temperatures',
+    				success: function(points) {
+
+    					shift_env_temp = chart.series[0].data.length > 20; // shift if the series is longer than 20
+                        shift_irradiance_temp = chart.series[1].data.length > 20; // shift if the series is longer than 20
+
+    					// add the point
+    					chart.series[0].addPoint(eval(points[0]), true, shift_env_temp);
+                        chart.series[1].addPoint(eval(points[1]), true, shift_irradiance_temp);
+
+    					// call it again after one second
+    					setTimeout(requestData, 1000);
+    				},
+    				cache: false
+    			});
+    		}
+
+            function requestDataVoltage() {
+    			$.ajax({
+    				url: 'http://localhost:4567/voltages',
+    				success: function(points) {
+
+    					// add the point
+    					chart_voltage.series[0].addPoint(eval(points[0]));
+                        chart_voltage.series[1].addPoint(eval(points[1]));
+                        chart_voltage.series[2].addPoint(eval(points[2]));
+
+
+    					// call it again after one second
+    					setTimeout(requestDataVoltage, 1000);
+    				},
+    				cache: false
+    			});
+    		}
+
+    		$(document).ready(function() {
+    			chart = new Highcharts.Chart({
+    				chart: {
+    					renderTo: 'container',
+    					defaultSeriesType: 'spline',
+    					events: {
+    						load: requestData
+    					}
+    				},
+    				title: {
+    					text: 'Live temperature'
+    				},
+    				xAxis: {
+    					type: 'datetime',
+    					tickPixelInterval: 150,
+    					maxZoom: 20 * 1000
+    				},
+    				yAxis: {
+    					minPadding: 0.2,
+    					maxPadding: 0.2,
+    					title: {
+    						text: 'Temperature C°',
+    						margin: 80
+    					}
+    				},
+    				series: [{
+    					name: 'Environement Temperature',
+    					data: []
+                    },{
+                    name: 'Irradiance Temperature',
+                    data: []
+                    }
+                ]
+    			});
+
+                chart_voltage = new Highcharts.Chart({
+                    chart: {
+                        renderTo: 'container_voltage',
+                        defaultSeriesType: 'spline',
+                        events: {
+                            load: requestDataVoltage
+                        }
+                    },
+                    title: {
+                        text: 'Grid Voltage'
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        tickPixelInterval: 150,
+                        maxZoom: 20 * 1000
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Voltage',
+                        }
+                    },
+                    series: [{
+                        name: 'AB',
+                        data: []
+                    },{
+                    name: 'BC',
+                    data: []
+                    },
+                    {
+                    name: 'CA',
+                    data: []
+                    }
+                ]
+                });
+
+    		});
+    		</script>
+
+
+</head>
+
+<body style='background: #eceff1'>
+
+        <div class="container">
+            <h1>PVStation <%= @timespamp %> <%= @temp %> </h1>
+            <div class="row">
+                <div class="col-sm-9">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Live Data</h5>
+                        </div>
+                        <div class="ibox-content">
+                             <div id="container">
+
+                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <span class="label label-success pull-right">Monthly</span>
+                            <h5>Income</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <h1 class="no-margins"><%= @total_income %> $USD</h1>
+                            <div class="stat-percent font-bold text-success">5% <i class="fa fa-level-up"></i></div>
+                            <small>Total income</small>
+                        </div>
+                    </div>
+                    <!-- total -->
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <span class="label label-info pull-right">Annual</span>
+                            <h5>Operating hours</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <h1 class="no-margins"><%=  '%.2f' % @operating_hour %> h</h1>
+                            <div class="stat-percent font-bold text-info">running <i class="fa fa-clock-o"></i></div>
+                            <small>Since november 2016</small>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Voltage</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <div id="container_voltage">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="ibox float-e-margins">
+                        <div class="ibox-title">
+                            <h5>Production</h5>
+                        </div>
+                        <div class="ibox-content">
+                            <div id="container_voltage">
+                                <%= pie_chart(@production_data) %>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+
+</body>
+
+</html>
